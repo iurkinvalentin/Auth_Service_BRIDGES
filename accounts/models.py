@@ -1,11 +1,16 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
 
 
 class CustomUser(AbstractUser):
     '''Пользовательская модель'''
     email = models.EmailField(unique=True, max_length=255)
-    date_joined = models.DateTimeField(auto_now_add=True)
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[RegexValidator(r'^[\w.@+-]+$')],
+    )
     last_login = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -15,7 +20,9 @@ class CustomUser(AbstractUser):
 class Profile(models.Model):
     '''Модель профиля'''
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    bio = models.CharField(max_length=500, null=True, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    birthday = models.DateField(null=True, blank=True)
     status_message = models.CharField(max_length=255, blank=True, null=True)
     is_online = models.BooleanField(default=False)
     last_seen = models.DateTimeField(null=True, blank=True)
@@ -24,19 +31,26 @@ class Profile(models.Model):
         return f"{self.user.username}'s profile"
 
 
-class Friendship(models.Model):
-    from_user = models.ForeignKey(CustomUser, related_name='from_friend', on_delete=models.CASCADE)
-    to_user = models.ForeignKey(CustomUser, related_name='to_friend', on_delete=models.CASCADE)
+class Connection(models.Model):
+    '''Модель связей'''
+    from_user = models.ForeignKey(CustomUser,
+                                  related_name='outgoing_connections',
+                                  on_delete=models.CASCADE)
+    to_user = models.ForeignKey(CustomUser,
+                                related_name='incoming_connections',
+                                on_delete=models.CASCADE)
+    is_confirmed = models.BooleanField(default=False)  # Если двусторонняя связь, дружба подтверждена
     created = models.DateTimeField(auto_now_add=True)
-
+    
     class Meta:
         unique_together = ('from_user', 'to_user')
 
     def __str__(self):
-        return f"{self.from_user.username} is friends with {self.to_user.username}"
+        return f"{self.from_user.username} is connected with {self.to_user.username}"
 
 
 class OnlineStatus(models.Model):
+    '''Статус'''
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     is_online = models.BooleanField(default=False)
     last_seen = models.DateTimeField(null=True, blank=True)
