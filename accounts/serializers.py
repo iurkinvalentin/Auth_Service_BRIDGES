@@ -20,7 +20,7 @@ class LoginSerializer(serializers.Serializer):
         raise serializers.ValidationError("Invalid credentials")
 
 
-class RegistrationSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.ModelSerializer):
     """Сериализатор для регистрации пользователя"""
     email = serializers.EmailField(required=True)
     username = serializers.CharField(
@@ -53,8 +53,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {
                     "username": (
-                        "Пользователь с таким email"
-                        "уже существует."
+                        "Пользователь с такими данными уже существует"
                     )
                 }
             )

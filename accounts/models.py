@@ -11,7 +11,6 @@ class CustomUser(AbstractUser):
         unique=True,
         validators=[RegexValidator(r'^[\w.@+-]+$')],
     )
-    last_login = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.username
@@ -47,13 +46,3 @@ class Connection(models.Model):
 
     def __str__(self):
         return f"{self.from_user.username} is connected with {self.to_user.username}"
-
-
-class OnlineStatus(models.Model):
-    '''Статус'''
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    is_online = models.BooleanField(default=False)
-    last_seen = models.DateTimeField(null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.user.username} is {'online' if self.is_online else 'offline'}"
