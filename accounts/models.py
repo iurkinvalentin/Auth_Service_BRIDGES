@@ -40,9 +40,12 @@ class Connection(models.Model):
                                 on_delete=models.CASCADE)
     is_confirmed = models.BooleanField(default=False)  # Если двусторонняя связь, дружба подтверждена
     created = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
-        unique_together = ('from_user', 'to_user')
+        constraints = [
+            models.UniqueConstraint(fields=['from_user', 'to_user'], name='unique_connection')
+        ]
 
     def __str__(self):
         return f"{self.from_user.username} is connected with {self.to_user.username}"
+
