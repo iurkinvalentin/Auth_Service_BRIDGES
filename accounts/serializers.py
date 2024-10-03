@@ -87,7 +87,7 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ('user', 'status_message', 'bio', 'avatar', 'birthday')
+        fields = ('user', 'status_message', 'bio', 'avatar', 'birthday', 'is_online', 'last_seen')
     
     def update(self, instance, validated_data):
         # Извлечение данных пользователя
@@ -105,6 +105,10 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = '__all__'
 
 
 class FriendshipSerializer(serializers.ModelSerializer):

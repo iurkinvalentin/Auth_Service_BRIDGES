@@ -2,7 +2,7 @@ from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import LoginSerializer, RegisterSerializer, ProfileUpdateSerializer
+from .serializers import LoginSerializer, RegisterSerializer, ProfileUpdateSerializer, ProfileSerializer
 from .models import Profile
 
 
@@ -102,3 +102,13 @@ class ProfileUpdateView(generics.RetrieveUpdateAPIView):
             # Создаем профиль, если его нет
             Profile.objects.create(user=user)
         return user.profile
+    
+
+class ProfileDetailView(generics.RetrieveAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        profile = self.request.user.profile
+        profile.update_online_status()  # Обновляем статус перед возвратом профиля
+        return profile

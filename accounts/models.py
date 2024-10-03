@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 
 
 class CustomUser(AbstractUser):
@@ -28,6 +30,15 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s profile"
+
+    def update_online_status(self):
+        if self.last_seen:
+            now = timezone.now()
+            if now - self.last_seen > timedelta(minutes=5):
+                self.is_online = False
+            else:
+                self.is_online = True
+            self.save()
 
 
 class Connection(models.Model):
