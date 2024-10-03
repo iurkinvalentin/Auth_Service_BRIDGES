@@ -79,15 +79,32 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'id', 'email', 'first_name', 'last_name')
+        fields = ('username', 'email', 'first_name', 'last_name')
 
 
-class ProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
 
     class Meta:
         model = Profile
-        fields = ('user', 'avatar', 'status_message', 'is_online', 'last_seen')
+        fields = ('user', 'status_message', 'bio', 'avatar', 'birthday')
+    
+    def update(self, instance, validated_data):
+        # Извлечение данных пользователя
+        user_data = validated_data.pop('user', None)
+        # Обновляем данные профиля
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        # Обновляем данные пользователя, если они были переданы
+        if user_data:
+            user = instance.user
+            for attr, value in user_data.items():
+                setattr(user, attr, value)
+            user.save()
+        return instance
+
+
 
 
 class FriendshipSerializer(serializers.ModelSerializer):

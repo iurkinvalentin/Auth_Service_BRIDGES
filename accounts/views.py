@@ -2,7 +2,8 @@ from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import LoginSerializer, RegisterSerializer
+from .serializers import LoginSerializer, RegisterSerializer, ProfileUpdateSerializer
+from .models import Profile
 
 
 class LoginView(APIView):
@@ -87,3 +88,17 @@ class DeleteView(APIView):
         user.delete()
 
         return Response({"message": "User deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class ProfileUpdateView(generics.RetrieveUpdateAPIView):
+    """Представление для редактирования профиля и пользователя"""
+    serializer_class = ProfileUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        """Получаем профиль текущего пользователя или создаем новый"""
+        user = self.request.user
+        if not hasattr(user, 'profile'):
+            # Создаем профиль, если его нет
+            Profile.objects.create(user=user)
+        return user.profile
