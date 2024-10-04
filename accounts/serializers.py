@@ -98,10 +98,19 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class CustomUserProfileSerializer(serializers.ModelSerializer):
+    """Сериализатор для отображения профиля пользователя без email."""
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'first_name', 'last_name')
+
+
 class ProfileSerializer(serializers.ModelSerializer):
+    user = CustomUserProfileSerializer()
+
     class Meta:
         model = Profile
-        fields = '__all__'
+        fields = ("user", "bio", "avatar", "birthday", "status_message", "is_online", "last_seen")
 
 
 class ConnectionsSerializer(serializers.ModelSerializer):

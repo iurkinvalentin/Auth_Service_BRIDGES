@@ -112,7 +112,7 @@ class ProfileDetailView(generics.RetrieveAPIView):
                 raise serializers.ValidationError({"detail": "User not found"})
         else:
             user = self.request.user
-        
+
         profile = user.profile
         profile.update_online_status()
         return profile
