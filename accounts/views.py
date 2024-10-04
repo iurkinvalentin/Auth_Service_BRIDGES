@@ -5,6 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import LoginSerializer, RegisterSerializer, ProfileUpdateSerializer, ProfileSerializer, ConnectionsSerializer
 from .models import Profile, Connections, CustomUser
 from django.db.models import Q
+from rest_framework import serializers
 
 
 class LoginView(APIView):
@@ -16,13 +17,11 @@ class LoginView(APIView):
         """Обработка POST запроса для авторизации"""
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data['user']  # Добавьте возврат пользователя в LoginSerializer
+            user = serializer.validated_data['user']
 
-            # Генерация JWT токенов для пользователя
             refresh = RefreshToken.for_user(user)
             access = refresh.access_token
 
-            # Возвращаем access и refresh токены
             return Response({
                 'refresh': str(refresh),
                 'access': str(access),
@@ -38,12 +37,10 @@ class LogoutView(APIView):
     def post(self, request, *args, **kwargs):
         """Обработка POST запроса для выхода"""
         try:
-            # Получаем refresh токен из запроса
             refresh_token = request.data.get("refresh_token")
             if refresh_token is None:
                 return Response({"detail": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Преобразуем его в объект RefreshToken и добавляем в черный список
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
@@ -65,14 +62,12 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        # Генерация JWT токенов для нового пользователя
         refresh = RefreshToken.for_user(user)
         tokens = {
             'refresh': str(refresh),
             'access': str(refresh.access_token)
         }
 
-        # Возвращаем данные о пользователе и токены
         return Response({
             'user': RegisterSerializer(user).data,
             'tokens': tokens
@@ -100,7 +95,6 @@ class ProfileUpdateView(generics.RetrieveUpdateAPIView):
         """Получаем профиль текущего пользователя или создаем новый"""
         user = self.request.user
         if not hasattr(user, 'profile'):
-            # Создаем профиль, если его нет
             Profile.objects.create(user=user)
         return user.profile
     
@@ -110,8 +104,17 @@ class ProfileDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        profile = self.request.user.profile
-        profile.update_online_status()  # Обновляем статус перед возвратом профиля
+        user_id = self.kwargs.get('pk', None)
+        if user_id:
+            try:
+                user = CustomUser.objects.get(id=user_id)
+            except CustomUser.DoesNotExist:
+                raise serializers.ValidationError({"detail": "User not found"})
+        else:
+            user = self.request.user
+        
+        profile = user.profile
+        profile.update_online_status()
         return profile
 
 
@@ -163,7 +166,6 @@ class ContactManagementView(APIView):
     def get(self, request, *args, **kwargs):
         """Получить список всех подтвержденных контактов"""
         user = request.user
-        # Получаем все подтвержденные связи, где текущий пользователь участвует как from_user или to_user
         confirmed_connections = Connections.objects.filter(
             Q(from_user=user) | Q(to_user=user),
             is_confirmed=True
