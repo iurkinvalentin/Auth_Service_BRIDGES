@@ -30,10 +30,13 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
     'accounts',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -138,3 +141,8 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,                      # Ключ для подписи токенов
     'AUTH_HEADER_TYPES': ('Bearer',),               # Тип токена, который ожидает система (Bearer)
 }
+
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+
+CORS_ALLOW_ALL_ORIGINS = True

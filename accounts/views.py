@@ -6,6 +6,26 @@ from .serializers import LoginSerializer, RegisterSerializer, ProfileUpdateSeria
 from .models import Profile, Connections, CustomUser
 from django.db.models import Q
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import AccessToken
+
+
+class VerifyTokenView(APIView):
+    """Проверка JWT токена и возврат данных пользователя"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        token = request.data.get('token')
+        try:
+            access_token = AccessToken(token)
+            user_id = access_token['user_id']
+            user = CustomUser.objects.get(id=user_id)
+            return Response({
+                "id": user.id,
+                "username": user.username,
+                "email": user.email
+            }, status=status.HTTP_200_OK)
+        except Exception:
+            return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class LoginView(APIView):
@@ -18,7 +38,6 @@ class LoginView(APIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-
             refresh = RefreshToken.for_user(user)
             access = refresh.access_token
 
