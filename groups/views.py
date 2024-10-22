@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from groups.models import Group
+from accounts.models import Profile
 from groups.serializers import GroupSerializer
 from django.shortcuts import get_object_or_404
 
@@ -51,3 +52,23 @@ class GroupViewSet(viewsets.ViewSet):
         group = get_object_or_404(Group, pk=pk)
         group.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def add_members(self, request, pk=None):
+        """Добавление участников в группу"""
+        group = get_object_or_404(Group, pk=pk)
+        members_data = request.data.get('members', [])
+        for member_id in members_data:
+            member = get_object_or_404(Profile, pk=member_id)
+            group.members.add(member)
+        group.save()
+        return Response({'detail': 'Участники успешно добавлены'}, status=status.HTTP_200_OK)
+
+    def remove_members(self, request, pk=None):
+        """Удаление участников из группы"""
+        group = get_object_or_404(Group, pk=pk)
+        members_data = request.data.get('members', [])
+        for member_id in members_data:
+            member = get_object_or_404(Profile, pk=member_id)
+            group.members.remove(member)
+        group.save()
+        return Response({'detail': 'Участники успешно удалены'}, status=status.HTTP_200_OK)
