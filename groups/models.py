@@ -1,6 +1,7 @@
 from django.db import models
 from accounts.models import CustomUser, Profile
 
+
 class Group(models.Model):
     name = models.CharField(max_length=255)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
