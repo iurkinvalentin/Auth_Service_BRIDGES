@@ -110,7 +110,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ("user", "bio", "avatar", "birthday", "status_message", "is_online", "last_seen")
+        fields = ("id", "user", "bio", "avatar", "birthday", "status_message", "is_online", "last_seen")
 
 
 class ConnectionsSerializer(serializers.ModelSerializer):

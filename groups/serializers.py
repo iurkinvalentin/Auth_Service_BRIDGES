@@ -1,32 +1,48 @@
 from rest_framework import serializers
-from groups.models import Group
+from groups.models import Group, GroupMembership
 from accounts.models import Profile
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    # Используем поле для передачи и получения списка ID участников
-    members = serializers.PrimaryKeyRelatedField(queryset=Profile.objects.all(), many=True)
+    owner = serializers.ReadOnlyField(source='owner.username')
+    members = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
-        fields = '__all__'
+        fields = ['id', 'name', 'description', 'avatar', 'created_at', 'updated_at', 'owner', 'members']
+
+    def get_members(self, obj):
+        """Извлекаем участников группы через модель GroupMembership"""
+        memberships = GroupMembership.objects.filter(group=obj)
+        return [{'profile_id': membership.profile.id, 'role': membership.role} for membership in memberships]
 
     def create(self, validated_data):
-        """Переопределяем метод создания группы с участниками"""
-        members_data = validated_data.pop('members', None)  # Извлекаем данные участников
+        """Создание новой группы"""
+        # Создаем группу с переданными данными
         group = Group.objects.create(**validated_data)
-        if members_data:
-            group.members.set(members_data)  # Устанавливаем участников группы
+        
+        # Добавляем владельца в качестве участника группы с ролью 'owner'
+        GroupMembership.objects.create(group=group, profile=self.context['request'].user.profile, role='owner')
+        
         return group
 
     def update(self, instance, validated_data):
-        """Переопределяем метод обновления группы"""
-        members_data = validated_data.pop('members', None)  # Извлекаем данные участников
+        """Обновление группы"""
         instance.name = validated_data.get('name', instance.name)
         instance.description = validated_data.get('description', instance.description)
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.save()
 
-        if members_data:
-            instance.members.set(members_data)  # Обновляем участников группы
+        return instance
+
+
+class GroupMembershipSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroupMembership
+        fields = ['group', 'profile', 'role', 'date_joined']
+
+    def update(self, instance, validated_data):
+        """Переопределение метода для обновления роли участника"""
+        instance.role = validated_data.get('role', instance.role)
+        instance.save()
         return instance

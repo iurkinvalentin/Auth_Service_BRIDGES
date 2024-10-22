@@ -7,7 +7,6 @@ class Group(models.Model):
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    members = models.ManyToManyField(Profile, related_name='groups')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -15,4 +14,26 @@ class Group(models.Model):
         return self.name
 
 
+class GroupMembership(models.Model):
+    ROLE_CHOICES = [
+        ('owner', 'Owner'),
+        ('member', 'Member'),
+    ]
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
+    date_joined = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ('group', 'profile')
+
+    def is_owner(self):
+        return self.role == 'owner'
+
+
+class GroupInvitation(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    notification = models
+    invited_by = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='invitations_sent')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_accepted = models.BooleanField(default=False)

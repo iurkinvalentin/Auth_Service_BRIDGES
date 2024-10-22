@@ -8,4 +8,5 @@ router.register(r'groups', GroupViewSet, basename='group')
 urlpatterns = [
     path('groups/<int:pk>/add_members/', GroupViewSet.as_view({'post': 'add_members'}), name='group-add-members'),
     path('groups/<int:pk>/remove_members/', GroupViewSet.as_view({'post': 'remove_members'}), name='group-remove-members'),
+    path('groups/<int:pk>/change_role/', GroupViewSet.as_view({'post': 'change_role'}), name='group-change-role')
 ] + router.urls
