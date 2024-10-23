@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from groups.models import Group, GroupMembership
-from accounts.models import Profile
+from groups.models import Group, GroupMembership, GroupInvitation
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -46,3 +45,13 @@ class GroupMembershipSerializer(serializers.ModelSerializer):
         instance.role = validated_data.get('role', instance.role)
         instance.save()
         return instance
+    
+
+class GroupInvitationSerializer(serializers.ModelSerializer):
+    invited_by = serializers.ReadOnlyField(source='invited_by.user.username')
+    invited_to = serializers.ReadOnlyField(source='invited_to.user.username')
+    group = serializers.ReadOnlyField(source='group.name')
+
+    class Meta:
+        model = GroupInvitation
+        fields = ['id', 'group', 'invited_by', 'invited_to', 'created_at', 'is_accepted']

@@ -1,8 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from groups.models import Group, GroupMembership
+from groups.models import Group, GroupMembership, GroupInvitation
 from accounts.models import Profile
-from groups.serializers import GroupSerializer
+from groups.serializers import GroupSerializer, GroupInvitationSerializer
 from django.shortcuts import get_object_or_404
 
 
@@ -119,3 +119,52 @@ class GroupViewSet(viewsets.ViewSet):
         membership.save()
 
         return Response({'detail': 'Роль успешно изменена'}, status=status.HTTP_200_OK)
+
+
+class InvitationViewSet(viewsets.ViewSet):
+    """ViewSet для управления приглашениями в группу"""
+
+    def create(self, request, pk=None):
+        """Отправка приглашения в группу"""
+        group = get_object_or_404(Group, pk=pk)
+        invited_to_profile = get_object_or_404(Profile, pk=request.data.get('profile_id'))
+
+        # Проверяем, что текущий пользователь является владельцем или администратором группы
+        if not GroupMembership.objects.filter(group=group, profile=request.user.profile, role='owner').exists():
+            return Response({'detail': 'У вас нет прав приглашать пользователей в эту группу'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Создаем приглашение
+        invitation = GroupInvitation.objects.create(
+            group=group,
+            invited_by=request.user.profile,
+            invited_to=invited_to_profile
+        )
+
+        return Response(GroupInvitationSerializer(invitation).data, status=status.HTTP_201_CREATED)
+
+    def accept(self, request, pk=None):
+        """Принятие приглашения в группу"""
+        invitation = get_object_or_404(GroupInvitation, pk=pk, invited_to=request.user.profile)
+
+        if invitation.is_accepted:
+            return Response({'detail': 'Это приглашение уже принято'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Принимаем приглашение
+        invitation.is_accepted = True
+        invitation.save()
+
+        # Добавляем пользователя в группу
+        GroupMembership.objects.create(group=invitation.group, profile=invitation.invited_to, role='member')
+
+        return Response({'detail': 'Приглашение принято, вы добавлены в группу'}, status=status.HTTP_200_OK)
+
+    def decline(self, request, pk=None):
+        """Отклонение приглашения в группу"""
+        invitation = get_object_or_404(GroupInvitation, pk=pk, invited_to=request.user.profile)
+
+        if invitation.is_accepted:
+            return Response({'detail': 'Это приглашение уже принято, его нельзя отклонить'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Удаляем приглашение
+        invitation.delete()
+        return Response({'detail': 'Приглашение отклонено'}, status=status.HTTP_204_NO_CONTENT)

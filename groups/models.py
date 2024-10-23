@@ -33,7 +33,11 @@ class GroupMembership(models.Model):
 
 class GroupInvitation(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
-    notification = models
     invited_by = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='invitations_sent')
+    invited_to = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='invitations_received')
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Invitation to {self.group.name} by {self.invited_by.user.username} to {self.invited_to.user.username}"
+

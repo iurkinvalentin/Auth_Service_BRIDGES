@@ -1,9 +1,10 @@
 from rest_framework.routers import DefaultRouter
-from groups.views import GroupViewSet
+from groups.views import GroupViewSet, InvitationViewSet
 from django.urls import path
 
 router = DefaultRouter()
 router.register(r'groups', GroupViewSet, basename='group')
+router.register(r'invitations', InvitationViewSet, basename='invitation')
 
 urlpatterns = [
     path('groups/<int:pk>/add_members/', GroupViewSet.as_view({'post': 'add_members'}), name='group-add-members'),
