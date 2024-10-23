@@ -124,14 +124,22 @@ class GroupViewSet(viewsets.ViewSet):
 class InvitationViewSet(viewsets.ViewSet):
     """ViewSet для управления приглашениями в группу"""
 
-    def create(self, request, pk=None):
+    def create(self, request):
         """Отправка приглашения в группу"""
-        group = get_object_or_404(Group, pk=pk)
-        invited_to_profile = get_object_or_404(Profile, pk=request.data.get('profile_id'))
+        group_id = request.data.get('group_id')
+        invited_to_profile_id = request.data.get('profile_id')
+        
+        # Получаем группу и профиль приглашенного
+        group = get_object_or_404(Group, pk=group_id)
+        invited_to_profile = get_object_or_404(Profile, pk=invited_to_profile_id)
 
         # Проверяем, что текущий пользователь является владельцем или администратором группы
-        if not GroupMembership.objects.filter(group=group, profile=request.user.profile, role='owner').exists():
+        if not GroupMembership.objects.filter(group=group, profile=request.user.profile, role__in=['owner', 'admin']).exists():
             return Response({'detail': 'У вас нет прав приглашать пользователей в эту группу'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Проверяем, существует ли уже приглашение
+        if GroupInvitation.objects.filter(group=group, invited_to=invited_to_profile).exists():
+            return Response({'detail': 'Приглашение уже отправлено'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Создаем приглашение
         invitation = GroupInvitation.objects.create(

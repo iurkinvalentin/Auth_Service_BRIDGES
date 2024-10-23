@@ -45,7 +45,7 @@ class GroupMembershipSerializer(serializers.ModelSerializer):
         instance.role = validated_data.get('role', instance.role)
         instance.save()
         return instance
-    
+
 
 class GroupInvitationSerializer(serializers.ModelSerializer):
     invited_by = serializers.ReadOnlyField(source='invited_by.user.username')
