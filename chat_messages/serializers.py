@@ -49,6 +49,39 @@ class ChatSerializer(serializers.ModelSerializer):
                 ChatParticipant.objects.create(chat=instance, user=user)
 
         return instance
+    
+
+class PrivateChatSerializer(serializers.ModelSerializer):
+    participants = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.all(),
+        many=True
+    )
+
+    class Meta:
+        model = Chat
+        fields = ['id', 'participants', 'created_at']
+
+    def create(self, validated_data):
+        participants = validated_data['participants']
+        if len(participants) != 2:
+            raise serializers.ValidationError("Личные чаты могут включать только двух участников.")
+        
+        # Фильтрация через связь участников
+        existing_chat = Chat.objects.filter(
+            participants__user__in=participants  # Правильная связь через related_name 'participants'
+        ).distinct().first()
+
+        if existing_chat:
+            return existing_chat
+
+        # Создание нового чата
+        chat = Chat.objects.create()
+        for participant in participants:
+            ChatParticipant.objects.create(chat=chat, user=participant)
+        
+        return chat
+
+
 
 
 
