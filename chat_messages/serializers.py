@@ -9,13 +9,15 @@ class MessageSerializer(serializers.ModelSerializer):
         model = Message
         fields = '__all__'
 
+class ChatParticipantSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.username')  # Отображаем имя пользователя
+
+    class Meta:
+        model = ChatParticipant
+        fields = ['user', 'role']  # Включаем роль участника
 
 class ChatSerializer(serializers.ModelSerializer):
-    participants = serializers.PrimaryKeyRelatedField(
-        queryset=CustomUser.objects.all(),  # или Profile.objects.all() в зависимости от модели
-        many=True,
-        required=False  # Поле не обязательно
-    )
+    participants = ChatParticipantSerializer(many=True, read_only=True)
 
     class Meta:
         model = Chat
@@ -81,11 +83,3 @@ class PrivateChatSerializer(serializers.ModelSerializer):
         
         return chat
 
-
-
-
-
-class ChatParticipantSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ChatParticipant
-        fields = '__all__'

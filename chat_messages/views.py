@@ -12,7 +12,7 @@ class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
 
     def create(self, request, *args, **kwargs):
-        """Создание нового чата и добавление создателя как участника"""
+        """Создание нового чата и добавление участников"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -22,8 +22,17 @@ class ChatViewSet(viewsets.ModelViewSet):
         # Добавляем создателя как участника с ролью 'admin'
         ChatParticipant.objects.create(chat=chat, user=request.user, role='admin')
 
+        # Получаем участников из запроса
+        participants = request.data.get('participants', [])
+
+        # Добавляем участников
+        for user_id in participants:
+            user = CustomUser.objects.get(id=user_id)
+            ChatParticipant.objects.create(chat=chat, user=user, role='member')
+
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     
     def destroy(self, request, *args, **kwargs):
         """Удаление чата и связанных данных"""
@@ -78,22 +87,23 @@ class PrivateChatViewSet(viewsets.ModelViewSet):
     serializer_class = PrivateChatSerializer
 
     def create(self, request, *args, **kwargs):
-        """Создание нового личного чата"""
+        """Создание нового личного чата с равными правами для обоих участников"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         # Получаем участников из запроса
         participants = request.data.get('participants')
     
-        # Создаем чат
+        # Создаем новый чат
         chat = Chat.objects.create()
 
-        # Добавляем участников
+        # Добавляем участников с ролью 'admin'
         for user_id in participants:
             user = CustomUser.objects.get(id=user_id)
-            ChatParticipant.objects.create(chat=chat, user=user)
+            ChatParticipant.objects.create(chat=chat, user=user, role='admin')
 
         return Response(ChatSerializer(chat).data, status=status.HTTP_201_CREATED)
+
 
 
 class MessageViewSet(viewsets.ModelViewSet):
