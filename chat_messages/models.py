@@ -26,9 +26,14 @@ class Message(models.Model):
 
 
 class ChatParticipant(models.Model):
-    """Модель участников чата."""
+    ROLE_CHOICES = [
+        ('admin', 'Admin'),
+        ('member', 'Member'),
+    ]
+
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='participants')
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')  # Добавляем поле role
     joined_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
